@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.software.pm.mapper.ProjectMapper">
+  
+  <insert id="addProject" parameterType="com.software.pm.domain.Project">
+    insert into project
+    (
+      `id`,
+      `productId`,
+      `name`,
+      `code`,
+      `begin`,
+      `end`,
+      `description`,
+      `createdBy`,
+      `createdDate`
+    )
+    values
+    (
+      #{id},
+      #{productId},
+      #{name},
+      #{code},
+      #{begin},
+      #{end},
+      #{description},
+      #{createdBy},
+      #{createdDate}
+    )
+  </insert>
+  
+  <select id="getProjectList" resultType="com.software.pm.common.domain.vo.ProjectVO">
+    SELECT
+      p.`id`,
+      p.`name`,
+      p.`code`,
+      p.`begin`,
+      p.`end`,
+      IF
+        ( any_value(t.id) IS NULL, 'TRUE', 'FALSE' ) AS haveTask
+    FROM
+      project p
+        LEFT JOIN task t ON p.id = t.projectId AND t.deleted = '0'
+    WHERE
+      p.`createdBy` =  #{createdBy}
+      AND p.deleted = '0'
+    GROUP BY
+      p.id
+    ORDER BY
+      p.`createdDate`
+  </select>
+  
+  <select id="getProjectDesc" resultType="String">
+    select `description`
+    from project
+    where id = #{id}
+  </select>
+  
+  <update id="updateProjectDesc">
+    update project
+    <set>
+      <if test="desc != null">`description` = #{desc} </if>
+    </set>
+    where id = #{id}
+  </update>
+  
+  <update id="deleteProject">
+    update project
+    <set>
+      `deleted` = "1"
+    </set>
+    where id = #{id}
+  </update>
+  
+  <select id="getSelectOption" resultType="com.software.pm.common.domain.vo.SelectOptionVO">
+    select `id`,`name`
+    from project
+    where deleted = '0'
+    order by `createdDate`
+  </select>
+  
+  <select id="getProjectInfo" resultType="com.software.pm.common.domain.vo.ProjectViewVO">
+    SELECT
+      p.`name`,
+      p.`code`,
+      p.description,
+      p.productId,
+      po.`name` AS productName,
+      p.`begin`,
+      p.`end`,
+      IF
+        ( any_value(t.id) IS NULL, 'TRUE', 'FALSE' ) AS haveTask
+    FROM
+      project p
+        LEFT JOIN product po ON p.productId = po.id
+        LEFT JOIN task t ON p.id = t.projectId
+    WHERE
+      p.id = #{id}
+    GROUP BY p.id
+  </select>
+</mapper>

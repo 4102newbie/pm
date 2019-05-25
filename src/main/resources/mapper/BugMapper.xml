@@ -1,0 +1,152 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.software.pm.mapper.BugMapper">
+  
+  <insert id="addBug" parameterType="com.software.pm.domain.Bug">
+    insert into bug
+    (
+      `id`,
+      `productId`,
+      `projectId`,
+      `taskId`,
+      `name`,
+      `deadline`,
+      `description`,
+      `createdBy`,
+      `createdDate`
+    )
+    values
+    (
+      #{id},
+      #{productId},
+      #{projectId},
+      #{taskId},
+      #{name},
+      #{deadline},
+      #{description},
+      #{createdBy},
+      #{createdDate}
+    )
+  </insert>
+  
+  <select id="isExist" resultType="int">
+    SELECT ISNULL( id )
+    FROM bug
+    WHERE taskId = #{taskId}
+  </select>
+  
+  <select id="getBugList" resultType="com.software.pm.common.domain.vo.BugVO">
+    SELECT
+      b.id,
+      b.`name`,
+      u.realname,
+      b.deadline,
+      b.closedBy
+    FROM
+      bug b
+        LEFT JOIN task t ON b.taskId = t.id
+        LEFT JOIN `user` u ON t.assignedTo = u.id
+    WHERE
+      b.createdBy = #{id}
+      AND b.resolvedBy IS NOT NULL
+      AND b.closedBy IS NULL
+  </select>
+  
+  <select id="getBugInfo" resultType="com.software.pm.common.domain.vo.BugViewVO">
+    SELECT
+      b.`name` AS bugName,
+      b.description,
+      b.productId,
+      po.`name` AS productName,
+      b.projectId,
+      pm.`name` AS projectName,
+      b.taskId,
+      t.`name` AS taskName,
+      u1.realname AS createdBy,
+      b.createdDate,
+      u2.realname AS resolvedBy,
+      b.resolvedDate,
+      u3.realname AS closedBy,
+      b.closedDate,
+      IF
+        ( b.verification = '0', 'TRUE', 'FALSE' ) AS verification
+    FROM
+      bug b
+        LEFT JOIN product po ON b.productId = po.id
+        LEFT JOIN project pm ON b.projectId = pm.id
+        LEFT JOIN task t ON b.taskId = t.id
+        LEFT JOIN `user` u1 ON b.createdBy = u1.id
+        LEFT JOIN `user` u2 ON b.resolvedBy = u2.id
+        LEFT JOIN `user` u3 ON b.closedBy = u3.id
+    WHERE
+      b.id = #{id}
+  </select>
+  
+  <select id="getDevBugList" resultType="com.software.pm.common.domain.vo.BugVO">
+    SELECT
+      b.id,
+      b.`name`,
+      u.realname AS createBy,
+      b.deadline
+    FROM
+      bug b
+        LEFT JOIN `user` u ON b.createdBy = u.id
+        LEFT JOIN task t ON b.taskId = t.id
+    WHERE
+      t.assignedTo = #{assignedTo}
+      AND b.resolvedBy IS NULL
+    ORDER BY
+      b.deadline,
+      b.createdDate
+  </select>
+  
+  <select id="countBugByProjectId" resultType="int">
+    SELECT
+      COUNT( id )
+    FROM
+      bug
+    WHERE
+      projectId = #{projectId}
+      AND resolvedBy IS NULL
+  </select>
+  
+  <select id="countBugByProductId" resultType="int">
+    SELECT
+      COUNT( id )
+    FROM
+      bug
+    WHERE
+      productId = #{productId}
+      AND resolvedBy IS NULL
+  </select>
+  
+  <update id="resolvedBug" parameterType="com.software.pm.common.domain.dto.SubmitDTO">
+    update bug
+    <set>
+      <if test="userId != null">`resolvedBy` = #{userId}, </if>
+      <if test="date != null">`resolvedDate` = #{date}, </if>
+      `verification` = '0'
+    </set>
+    where id = #{id}
+  </update>
+  
+  <update id="verifyBugFall">
+    update bug
+    <set>
+      `resolvedBy` = null,
+      `resolvedDate` = null,
+      `verification` = #{verification}
+    </set>
+    where id = #{id}
+  </update>
+  
+  <update id="verifyBugPass" parameterType="com.software.pm.common.domain.dto.SubmitDTO">
+    update bug
+    <set>
+      <if test="userId != null">`closedBy` = #{userId}, </if>
+      <if test="date != null">`closedDate` = #{date}, </if>
+      `verification` = '1'
+    </set>
+    where id = #{id}
+  </update>
+</mapper>

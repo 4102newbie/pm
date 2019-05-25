@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.software.pm.mapper.TaskMapper">
+  <insert id="addTask" parameterType="com.software.pm.domain.Task">
+    insert into task
+    (
+      `id`,
+      `projectId`,
+      `name`,
+      `begin`,
+      `end`,
+      `description`,
+      `createdBy`,
+      `createdDate`,
+      `assignedTo`,
+      `assignedDate`
+    )
+    values
+    (
+      #{id},
+      #{projectId},
+      #{name},
+      #{begin},
+      #{end},
+      #{description},
+      #{createdBy},
+      #{createdDate},
+      #{assignedTo},
+      #{assignedDate}
+    )
+  </insert>
+  
+  <select id="getTaskList" resultType="com.software.pm.common.domain.vo.TaskVO">
+    SELECT t.id, t.`name`, t.`begin`, t.`end`, u.realname, t.finishedDate, t.canceledDate
+    FROM task t
+    LEFT JOIN `user` u ON t.assignedTo = u.id
+    WHERE `createdBy` = #{createdBy}
+#     and t.deleted = '0'
+    ORDER BY `end`,`createdDate`
+  </select>
+  
+  <update id="deleteProject">
+    update task
+    <set>
+      `deleted` = "1",
+      `canceledBy` = task.createdBy,
+      `canceledDate` = NOW()
+    </set>
+    where id = #{id}
+  </update>
+  
+  <select id="getTaskDesc" resultType="String">
+    select `description`
+    from task
+    where id = #{id}
+  </select>
+  
+  <update id="updateTaskDesc" parameterType="com.software.pm.domain.Task">
+    update task
+    <set>
+      <if test="desc != null">`description` = #{desc} </if>
+    </set>
+    where id = #{id}
+  </update>
+  
+  <select id="getMyTaskList" resultType="com.software.pm.common.domain.vo.TaskVO">
+    SELECT `id`,`name`, `begin`, `end`
+    FROM task
+    WHERE deleted = '0'
+    AND assignedTo = #{assignedTo}
+    AND finishedBy IS NULL
+    ORDER BY `end`,`createdDate`
+  </select>
+  
+  <update id="finishedTask">
+    UPDATE task
+    <set>
+      <if test="finishedBy != null">`finishedBy` = #{finishedBy}, </if>
+      <if test="finishedDate != null">`finishedDate` = #{finishedDate}</if>
+    </set>
+    WHERE id = #{taskId}
+  </update>
+  
+  <select id="getTaskInfo" resultType="com.software.pm.common.domain.vo.TaskViewVO">
+    SELECT
+      t.id,
+      t.`name`,
+      t.description,
+      t.projectId,
+      pm.`name` AS projectName,
+      u1.realname AS `create`,
+      t.createdDate,
+      u2.realname AS finish,
+      t.finishedDate,
+      u3.realname AS cancel,
+      t.canceledDate,
+      u4.realname AS `close`,
+      t.closedDate,
+      IFNULL( t.closedReason, '暂无' ) AS closedReason,
+      IF( b.id IS NULL, FALSE, TRUE ) AS haveBug
+    FROM
+      task t
+        LEFT JOIN project pm ON t.projectId = pm.id
+        LEFT JOIN `user` u1 ON t.createdBy = u1.id
+        LEFT JOIN `user` u2 ON t.finishedBy = u2.id
+        LEFT JOIN `user` u3 ON t.canceledBy = u3.id
+        LEFT JOIN `user` u4 ON t.closedBy = u4.id
+        LEFT JOIN bug b ON t.id = b.taskId
+    WHERE
+      t.id = #{taskId}
+  </select>
+  
+  <select id="getTestTaskList" resultType="com.software.pm.common.domain.vo.TaskVO">
+    SELECT
+      t.id,
+      t.`name`,
+      u.realname,
+      t.finishedDate
+    FROM
+      task t
+        LEFT JOIN `user` u ON t.finishedBy = u.id
+        LEFT JOIN bug b ON t.id = b.taskId
+    WHERE
+      t.deleted = '0'
+      AND finishedBy IS NOT NULL
+      AND t.closedBy IS NULL
+      AND b.id IS NULL
+    ORDER BY
+      t.`finishedDate`,
+      t.`createdDate`
+  </select>
+  
+  <update id="closeTask" parameterType="com.software.pm.common.domain.dto.SubmitDTO">
+    UPDATE task
+    <set>
+      <if test="userId != null">`closedBy` = #{userId}, </if>
+      <if test="date != null">`closedDate` = #{date}, </if>
+      <if test="reason != null">`closedReason` = #{reason}</if>
+    </set>
+    WHERE id = #{id}
+  </update>
+  
+  <select id="getRelation" resultType="com.software.pm.common.domain.vo.RelationVO">
+    SELECT
+      t.id AS taskId,
+      t.`name` AS taskName,
+      t.projectId,
+      p.productId
+    FROM
+      task t
+        LEFT JOIN project p ON t.projectId = p.id
+    WHERE
+      t.id = #{taskId}
+  </select>
+  
+  <select id="isExist" resultType="int">
+    SELECT ISNULL( closedBy )
+    FROM task
+    WHERE id = #{taskId}
+  </select>
+  
+  <select id="countTaskByProjectId" resultType="int">
+    SELECT
+      COUNT( t.id )
+    FROM
+      task t
+        LEFT JOIN bug b ON t.id = b.taskId
+    WHERE
+      t.projectId = #{projectId}
+      AND ( t.closedBy IS NULL OR t.canceledBy IS NULL )
+      AND b.id IS NULL
+      AND t.deleted = '0'
+  </select>
+  
+  <select id="countTaskByProductId" resultType="int">
+    SELECT
+      COUNT(t.id)
+    FROM
+      product po
+        LEFT JOIN project pm ON po.id = pm.productId
+        LEFT JOIN task t ON pm.id = t.projectId
+        LEFT JOIN bug b ON t.id = b.taskId
+    WHERE
+      po.id = #{productId}
+      AND ( t.closedBy IS NULL OR t.canceledBy IS NULL )
+      AND b.id IS NULL
+      AND po.deleted = '0'
+      AND pm.deleted = '0'
+      AND t.deleted = '0'
+  </select>
+</mapper>

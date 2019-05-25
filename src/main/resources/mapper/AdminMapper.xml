@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.software.pm.mapper.AdminMapper">
+
+  <select id="getUserList" resultType="com.software.pm.domain.User">
+    select `id`,`account`,`password`,`role`,`realname`,`avatar`,`gender`,`email`,`mobile`,`address`,`join`,`deleted`, `sort`
+    from `user`
+    WHERE deleted = '0'
+    ORDER BY `join`,`sort`
+  </select>
+  
+  <insert id="addUserInfo" parameterType="com.software.pm.domain.User">
+    insert into `user`
+    (
+      `id`,
+      `account`,
+      `password`,
+      `role`,
+      `realname`,
+      `avatar`,
+      `gender`,
+      `email`,
+      `mobile`,
+      `address`,
+      `join`,
+      `sort`
+    )values
+    (
+      #{id},
+      #{account},
+      #{password},
+      #{role},
+      #{realname},
+      #{avatar},
+      #{gender},
+      #{email},
+      #{mobile},
+      #{address},
+      #{join},
+      #{sort}
+    )
+  </insert>
+  
+  <update id="deleteUser">
+    update `user`
+    <set>
+      `deleted` = "1"
+    </set>
+    where id = #{id}
+  </update>
+  
+</mapper>

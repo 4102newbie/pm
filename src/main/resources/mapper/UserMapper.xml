@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.software.pm.mapper.UserMapper">
+  
+  <select id="getUserById" resultType="com.software.pm.domain.User">
+		select `id`,`account`,`password`,`role`,`realname`,`avatar`,`gender`,`email`,`mobile`,`address`,`join`,`deleted`,`sort`
+		from `user`
+		where id = #{value}
+  </select>
+  
+  <select id="getUserByAccount" resultType="com.software.pm.domain.User">
+		select `id`,`account`,`password`,`role`,`realname`,`avatar`,`gender`,`email`,`mobile`,`address`,`join`,`deleted`,`sort`
+		from `user`
+		where account = #{value}
+        and deleted = '0'
+  </select>
+  
+  <update id="updateUserInfo" parameterType="com.software.pm.domain.User">
+    update `user`
+    <set>
+      <if test="account != null">`account` = #{account}, </if>
+      <if test="password != null">`password` = #{password}, </if>
+      <if test="role != null">`role` = #{role}, </if>
+      <if test="realname != null">`realname` = #{realname},</if>
+      <if test="avatar != null">`avatar` = #{avatar},</if>
+      <if test="gender != null">`gender` = #{gender},</if>
+      <if test="email != null">`email` = #{email},</if>
+      <if test="mobile != null">`mobile` = #{mobile},</if>
+      <if test="address != null">`address` = #{address},</if>
+      <if test="join != null">`join` = #{join} </if>
+    </set>
+    where id = #{id}
+  </update>
+
+  <update id="updatePassword" parameterType="com.software.pm.common.domain.dto.UserInfoDTO">
+    update `user`
+    <set>
+      <if test="password != null">`password` = #{password}</if>
+    </set>
+    where id = #{id}
+  </update>
+  
+  <select id="count" resultType="int">
+    select count(id) from `user`
+  </select>
+  
+  <select id="getSelectOption" resultType="com.software.pm.common.domain.vo.SelectOptionVO">
+    select `id`,`realname` as name
+    from `user`
+    where deleted = '0'
+    and `role` = 'dev'
+    ORDER BY `join`,`sort`
+  </select>
+  
+  <select id="getAccount" resultType="String">
+    SELECT account FROM `user`
+    where deleted = '0'
+  </select>
+</mapper>

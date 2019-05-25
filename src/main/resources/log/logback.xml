@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+  <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}}/pm.log}"/>
+  <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+  
+  <!-- 日志文件存放路径 -->
+  <property name="PATH" value="\log"/>
+  
+  <!-- ConsoleAppender：把日志输出到控制台 -->
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>[%date{yyyy-MM-dd HH:mm:ss}] [%-5level] [%logger:%line] --%mdc{client} %msg%n</pattern>
+      <!-- 控制台也要使用UTF-8，不要使用GBK，否则会中文乱码 -->
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+  
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <!-- 正在记录的日志文件的路径及文件名 -->
+    <file>${PATH}/pm.log</file>
+    <append>true</append>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${PATH}/pm.log.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+      <maxFileSize>100MB</maxFileSize>
+      <maxHistory>30</maxHistory>
+      <totalSizeCap>3GB</totalSizeCap>
+    </rollingPolicy>
+    <encoder>
+      <pattern>[%date{yyyy-MM-dd HH:mm:ss}] [%-5level] [%logger:%line] --%mdc{client} %msg%n</pattern>
+    </encoder>
+  </appender>
+  
+  <logger name="com.software.pm.mapper" level="DEBUG"/>
+  
+  <!-- 默认 -->
+  <root>
+    <level value="INFO"/>
+    <!--<appender-ref ref="FILE"/>-->
+    <appender-ref ref="STDOUT"/>
+  </root>
+
+</configuration>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.software.pm.mapper.ProductMapper">
+  
+  <insert id="addProduct" parameterType="com.software.pm.domain.Product">
+    insert into product
+    (
+      `id`,
+      `name`,
+      `code`,
+      `description`,
+      `createdBy`,
+      `createdDate`
+    )
+    values
+    (
+      #{id},
+      #{name},
+      #{code},
+      #{description},
+      #{createdBy},
+      #{createdDate}
+    )
+  </insert>
+  
+  <select id="getProductInfo" resultType="com.software.pm.common.domain.vo.ProductViewVO">
+    SELECT
+      p.`name`,
+      p.`code`,
+      p.description,
+      u.realname AS createdBy,
+      p.createdDate,
+      IF
+        ( any_value(pm.id) IS NULL, 'TRUE', 'FALSE' ) AS isClose
+    FROM
+      product p
+        LEFT JOIN `user` u ON p.createdBy = u.id
+        LEFT JOIN project pm ON p.id = pm.productId
+    WHERE
+      p.id = #{id}
+      AND p.deleted = '0'
+    GROUP BY
+      p.id
+  </select>
+  
+  <select id="getProductList" resultType="com.software.pm.common.domain.vo.ProductVO">
+    SELECT
+      po.`id`,
+      po.`name`,
+      pm.id AS projectId,
+      pm.`name` AS projectName
+    FROM
+      product po
+        LEFT JOIN project pm ON po.id = pm.productId and pm.deleted = '0'
+    WHERE
+      po.deleted = '0'
+    ORDER BY
+      po.`createdDate`
+  </select>
+  
+  <select id="getSelectOption" resultType="com.software.pm.common.domain.vo.SelectOptionVO">
+    select `id`,`name`
+    from product
+    where deleted = '0'
+    order by `createdDate`
+  </select>
+  
+  <select id="getProjectDesc" resultType="String">
+    select `description`
+    from product
+    where id = #{id}
+  </select>
+  
+  <update id="updateProductDesc">
+    update product
+    <set>
+      <if test="desc != null">`description` = #{desc} </if>
+    </set>
+    where id = #{id}
+  </update>
+  
+  <update id="deleteProduct">
+    update product
+    <set>
+      `deleted` = "1"
+    </set>
+    where id = #{id}
+  </update>
+</mapper>
